@@ -27,20 +27,23 @@
 (defn app [{:keys [session biff/db] :as ctx}]
   (let [{:user/keys [email]} (xt/entity db (:uid session))]
     (ui/page
-      {}
-      [:div "Signed in as " email ". "
-       (biff/form
-         {:action "/auth/signout"
-          :class "inline"}
-         [:button.text-blue-500.hover:text-blue-800 {:type "submit"}
-          "Sign out"])
-       "."]
-      [:.h-6 "Plan"]
-      (ui/render-plan (->> example-events ;; Obviously this is not yet what we want! We want to merge this with the plan
-                           (st/get-microcycle 0)
-                           st/microcycle->plan-structure))
-      (ui/render-plan (plan/->plan plan/template))
-      [:.h-6])))
+     {}
+     [:div "Signed in as " email ". "
+      (biff/form
+       {:action "/auth/signout"
+        :class "inline"}
+       [:button.text-blue-500.hover:text-blue-800 {:type "submit"}
+        "Sign out"])
+      "."]
+     [:div "Word"]
+     [:.h-1 "Plan reconstructed from event log"]
+     (ui/render-plan (->> example-events ;; Obviously this is not yet what we want! We want to merge this with the plan
+                          (st/get-microcycle 0)
+                          st/microcycle->plan-structure))
+     [:.flex-grow
+      [:.h-1 "Plan from template"]]
+     (ui/render-plan (plan/->plan plan/template))
+     [:.h-6])))
 
 
 
@@ -61,3 +64,16 @@
             ["" {:get app}]
             ]
    :api-routes [["/api/echo" {:post echo}]]})
+
+(comment
+
+  (let [tmplt plan/template
+        plan-from-template (plan/->plan tmplt)]
+    plan-from-template)
+
+  (let [plan-from-events (->> example-events
+       (st/get-microcycle 0)
+       st/microcycle->plan-structure)]
+    plan-from-events)
+  ();;end of rich comment block
+  )
