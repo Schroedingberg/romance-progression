@@ -11,16 +11,24 @@
             [clojure.core :as c]))
 
 
-(def example-events [(st/completed-set "full body" 0 :monday "Squat" 100 10 nil nil)
-                     (st/completed-set "full body" 0 :monday "Squat" 100 9  nil nil)
-                     (st/completed-set "full body" 0 :monday "Pullup" 80 10  nil nil)
-                     (st/completed-set "full body" 0 :thursday "Bench" 100 8 nil nil)
-                     (st/completed-set "full body" 0 :thursday "Bench" 100 6 nil nil)
-                     (st/completed-set "full body" 0 :thursday "Deadlift" 300 5 nil nil)
-                    (st/completed-set "full body" 1 :monday "Squat" nil nil 102.5 10)])
+(def example-events [(st/completed-set "Twice a week upper body focus" 0 :monday "Squat" 100 10 nil nil)
+                     (st/completed-set "Twice a week upper body focus" 0 :monday "Squat" 100 9  nil nil)
+                     (st/completed-set "Twice a week upper body focus" 0 :monday "Pullup" 80 10  nil nil)
+                     (st/completed-set "Twice a week upper body focus" 0 :thursday "Bench" 100 8 nil nil)
+                     (st/completed-set "Twice a week upper body focus" 0 :thursday "Bench" 100 6 nil nil)
+                     (st/completed-set "Twice a week upper body focus" 0 :thursday "Deadlift" 300 5 nil nil)
+                     (st/completed-set "Twice a week upper body focus" 1 :monday "Squat" nil nil 102.5 10)])
+
+(def ^:private merged-plan-struct
+  (let [from-events (->> example-events
+                       (st/get-microcycle 0)
+                       st/microcycle->plan-structure)
+      from-template (-> plan/template plan/->plan)]
+  (merge from-template from-events)))
 
 
 
+merged-plan-struct ;; TODO: Seems like this still doesnt get the reps from my mock events? Lets fix that next
 
 
 
@@ -37,12 +45,10 @@
       "."]
      [:div "Word"]
      [:.h-1 "Plan reconstructed from event log"]
-     (ui/render-plan (->> example-events ;; Obviously this is not yet what we want! We want to merge this with the plan
-                          (st/get-microcycle 0)
-                          st/microcycle->plan-structure))
+     (ui/render-plan merged-plan-struct)
      [:.flex-grow
-      [:.h-1 "Plan from template"]]
-     (ui/render-plan (plan/->plan plan/template))
+      ]
+
      [:.h-6])))
 
 
