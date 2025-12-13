@@ -7,9 +7,13 @@
 
 
 
-(defn expand-exercises [{:keys [exercises]}]
-  (update-vals exercises (fn [{:keys [n-sets] :as ex}]
-                           ((comp vec repeat) n-sets ex))))
+(defn expand-exercises
+  "Turn the n-sets specification from a template into n-sets maps, representing sets."
+  [{:keys [exercises]}]
+  (-> exercises
+      (update-vals (fn [{:keys [n-sets] :as ex}]
+                     ((comp vec repeat) n-sets
+                      (dissoc ex :n-sets))))))
 
 (defn ->plan [{:keys [name n-microcycles workouts] :as template}]
   (let [expanded-workouts (update-vals  workouts expand-exercises)

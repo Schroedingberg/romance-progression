@@ -11,7 +11,7 @@
    :workout workout
    :exercise exercise
    :performed-weight performed-weight
-   :performed-reps prescribed-reps
+   :performed-reps performed-reps
    :prescribed-weight prescribed-weight
    :prescribed-reps prescribed-reps
    :timestamp (java.time.Instant/now)})

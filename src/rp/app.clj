@@ -19,7 +19,7 @@
                      (st/completed-set "Twice a week upper body focus" 0 :thursday "Deadlift" 300 5 nil nil)
                      (st/completed-set "Twice a week upper body focus" 1 :monday "Squat" nil nil 102.5 10)])
 
-(def ^:private merged-plan-struct
+(def merged-plan-struct
   (let [from-events (->> example-events
                        (st/get-microcycle 0)
                        st/microcycle->plan-structure)
@@ -28,7 +28,6 @@
 
 
 
-merged-plan-struct ;; TODO: Seems like this still doesnt get the reps from my mock events? Lets fix that next
 
 
 
@@ -81,5 +80,7 @@ merged-plan-struct ;; TODO: Seems like this still doesnt get the reps from my mo
        (st/get-microcycle 0)
        st/microcycle->plan-structure)]
     plan-from-events)
+  merged-plan-struct
+
   ();;end of rich comment block
   )
