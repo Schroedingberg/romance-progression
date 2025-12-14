@@ -3,6 +3,8 @@
             [rp.middleware :as mid]
             [rp.ui :as ui]
             [rp.settings :as settings]
+            [rp.commands :as commands]
+            [rp.queries :as queries]
             [rum.core :as rum]
             [rp.domain.plan :as plan]
             [rp.domain.state :as st]
@@ -11,24 +13,17 @@
             [clojure.core :as c]
             [clojure.data :as data]))
 
-
-(def example-events [(st/completed-set "Twice a week upper body focus" 0 :monday "Barbell Upright Row" 30 10 nil nil)
-                     (st/completed-set "Twice a week upper body focus" 0 :monday "Squat" 100 10 nil nil)
-                     (st/completed-set "Twice a week upper body focus" 0 :monday "Squat" 100 9  nil nil)
-                     (st/completed-set "Twice a week upper body focus" 0 :monday "Pullup" 80 10  nil nil)
-                     (st/completed-set "Twice a week upper body focus" 0 :thursday "Bench" 100 8 nil nil)
-                     (st/completed-set "Twice a week upper body focus" 0 :thursday "Bench" 100 6 nil nil)
-                     (st/completed-set "Twice a week upper body focus" 0 :thursday "Deadlift" 300 5 nil nil)
-                     (st/completed-set "Twice a week upper body focus" 1 :monday "Squat" nil nil 102.5 10)])
-
-;; TODO: Dont define global vars in app.clj
-(def progress-map
-  (-> example-events
-    (st/view-progress-in-plan (plan/->plan plan/template))
+(defn progress-map
+  "Render the progress represented by events in the context of the plan generated from template as html."
+  [events template]
+  (-> events
+    (st/view-progress-in-plan (plan/->plan template))
     (ui/render-plan)))
 
 (defn app [{:keys [session biff/db] :as ctx}]
-  (let [{:user/keys [email]} (xt/entity db (:uid session))]
+  (let [{:user/keys [email]} (xt/entity db (:uid session))
+        db-events (queries/get-all-events ctx)
+        events (map queries/db-event->domain-event db-events)]
     (ui/page
      {}
      [:div "Signed in as " email ". "
@@ -38,12 +33,14 @@
        [:button.text-blue-500.hover:text-blue-800 {:type "submit"}
         "Sign out"])
       "."]
-     progress-map
+     (progress-map events plan/template)
      [:.flex-grow
       ]
 
      [:.h-6])))
 
+
+;; TODO: Add a route for posting events, to be htmx posted to from every set line
 
 
 (def about-page
@@ -66,5 +63,6 @@
 
 (comment
 
-      ();;end of rich comment block
+
+    ();;end of rich comment block
   )
