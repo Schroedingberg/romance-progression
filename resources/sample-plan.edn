@@ -12,7 +12,6 @@
 ;; Thats it!
 ;; The actual plan is going to be generated on the fly. This allows keeping the definition of a plan concise and short.
 
-;; TODO: Make this a full map - this will make it way easier to generate a plan from it! It will also fit the semantic better
 {:name "Twice a week upper body focus"
  :n-microcycles 4
  :workouts {:monday

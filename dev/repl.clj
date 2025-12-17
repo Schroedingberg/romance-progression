@@ -1,7 +1,8 @@
 (ns repl
   (:require [rp :as main]
             [com.biffweb :as biff :refer [q]]
-            [rp.logging :as logging]
+            [rp.commands :as commands]
+            [rp.queries :as queries]
             [clojure.edn :as edn]
             [clojure.java.io :as io]))
 
@@ -30,9 +31,9 @@
 
 (defn add-fixtures []
   (biff/submit-tx (get-context)
-    (-> (io/resource "fixtures.edn")
-        slurp
-        edn/read-string)))
+                  (-> (io/resource "fixtures.edn")
+                      slurp
+                      edn/read-string)))
 
 (defn check-config []
   (let [prod-config (biff/use-aero-config {:biff.config/profile "prod"})
@@ -73,9 +74,9 @@
 
   (let [{:keys [biff/db] :as ctx} (get-context)
         user-id (biff/lookup-id db :user/email "aaronrebmann@gmail.com")]
-(q db
-   '{:find  email
-     :where [[user :user/email email]]}))
+    (q db
+       '{:find  email
+         :where [[user :user/email email]]}))
 
 ;; Update an existing user's email address
   (let [{:keys [biff/db] :as ctx} (get-context)
@@ -85,6 +86,18 @@
                       :xt/id user-id
                       :db/op :update
                       :user/email "new.address@example.com"}]))
+
+;; These are basically the main database interactions I currently care for:
+  ;; Creating an event and ...
+
+  (let [{:keys [biff/db] :as ctx} (get-context)
+        user-id (biff/lookup-id db :user/email "aaronrebmann@gmail.com")]
+    (commands/log-user-event! ctx user-id {:event/type :microcycle-started}))
+
+;; getting all events
+  (let [{:keys [biff/db] :as ctx} (get-context)]
+    (queries/get-all-events ctx))
+
 
   (sort (keys (get-context)))
 

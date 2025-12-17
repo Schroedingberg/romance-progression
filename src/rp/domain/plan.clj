@@ -5,22 +5,22 @@
 
 (def default-template-path "resources/sample-plan.edn")
 
-(defn expand-sets-in-exercise
-  "Takes a map that represents an exercise in a template and returns exactly that with a sequence of actual sets, not only the number of sets.
-  "
-  [{:keys [name n-sets muscle-groups equipment]}]
-  (let [sets (repeat n-sets {:prescribed-weight nil :prescribed-reps nil :actual-weight nil :actual-reps nil})]
-    {:name name :sets sets :muscle-groups muscle-groups :equipment equipment}))
 
-(defn expand-exercises [{:keys [name day exercises]}]
-  {:name name :day day :exercises (mapv expand-sets-in-exercise exercises)})
 
-(defn old->plan [template]
-  (vec (repeat (:n-microcycles template) (update template :workouts #(mapv expand-exercises %)))))
-
+(defn expand-exercises
+  "Turn the n-sets specification from a template into n-sets maps, representing sets."
+  [{:keys [exercises]}]
+  (-> exercises
+      (update-vals (fn [{:keys [n-sets] :as ex}]
+                     ((comp vec repeat) n-sets
+                      (dissoc ex :n-sets))))))
 
 (defn ->plan [{:keys [name n-microcycles workouts] :as template}]
-  (let []))
+  (let [expanded-workouts (update-vals  workouts expand-exercises)
+        microcycles (zipmap (take n-microcycles (iterate inc 0)) (repeat n-microcycles expanded-workouts))]
+    {name microcycles}))
+
+
 
 (def template (->> (io/resource "sample-plan.edn")
                    slurp
@@ -42,5 +42,8 @@
 
   template
 
+
+
+  (->plan template)
   ();; end of rich comment block
   )
