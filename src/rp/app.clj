@@ -13,6 +13,12 @@
             [clojure.core :as c]
             [clojure.data :as data]))
 
+
+
+
+;; TODO: As soon as mvp is running, we should refactor to hide private stuff in deeper namespaces and in general divide the namespaces better
+
+
 (defn progress-map
   "Render the progress represented by events in the context of the plan generated from template as html."
   [events template]
@@ -33,7 +39,10 @@
        [:button.text-blue-500.hover:text-blue-800 {:type "submit"}
         "Sign out"])
       "."]
-     (progress-map events plan/template)
+     ;; (progress-map events plan/template)
+
+     (biff/form [:class "inline"
+                 [:button.text-blue-500.hover:text-blue-800 [:type ]]])
      [:.flex-grow
       ]
 

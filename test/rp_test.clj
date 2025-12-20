@@ -9,6 +9,7 @@
             [rum.core :as rum]
             [xtdb.api :as xt]))
 
+;; TODO: Write at least a few integration tests / api tests
 (deftest example-test
   (is (= 4 (+ 2 2))))
 
