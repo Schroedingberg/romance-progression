@@ -21,7 +21,10 @@
       (st/view-progress-in-plan (plan/->plan template))
       (ui/render-plan)))
 
-(defn app [{:keys [session biff/db] :as ctx}]
+(defn app
+  "This returns the page where the main functionality happens -
+  logging sets and displaying progress."
+  [{:keys [session biff/db] :as ctx}]
   (let [{:user/keys [email]} (xt/entity db (:uid session))
         db-events (queries/get-all-events ctx)
         events (map queries/db-event->domain-event db-events)]
