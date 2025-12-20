@@ -6,16 +6,4 @@
 
 
 
- {:db/doc-type :event
-  :xt/id :db.id/event-1
-  :event/type :set-completed
-  :event/user :db.id/user-a
-  :event/mesocycle "Twice a week upper body focus"
-  :event/microcycle 0
-  :event/workout :monday
-  :event/exercise "Barbell Upright Row"
-  :event/prescribed-weight 30.0
-  :event/prescribed-reps 10
-  :event/performed-weight 30.0
-  :event/performed-reps 10
-  :event/timestamp :db/now}]
+ ]
