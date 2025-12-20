@@ -8,6 +8,7 @@
             [rum.core :as rum]
             [rp.domain.plan :as plan]
             [rp.domain.state :as st]
+            [rp.domain.logging :as lg]
             [xtdb.api :as xt]
             [cheshire.core :as cheshire]
             [clojure.core :as c]
@@ -17,8 +18,8 @@
   "Render the progress represented by events in the context of the plan generated from template as html."
   [events template]
   (-> events
-    (st/view-progress-in-plan (plan/->plan template))
-    (ui/render-plan)))
+      (st/view-progress-in-plan (plan/->plan template))
+      (ui/render-plan)))
 
 (defn app [{:keys [session biff/db] :as ctx}]
   (let [{:user/keys [email]} (xt/entity db (:uid session))
@@ -33,15 +34,19 @@
        [:button.text-blue-500.hover:text-blue-800 {:type "submit"}
         "Sign out"])
       "."]
+
      (progress-map events plan/template)
-     [:.flex-grow
-      ]
+     [:.flex-grow]
 
      [:.h-6])))
 
 
-;; TODO: Add a route for posting events, to be htmx posted to from every set line
+(defn log-set! [{:keys [session biff/db params] :as ctx}]
+  (let [{:user/keys [email]} (xt/entity db (:uid session))
+        user-id (biff/lookup-id db :user/email email)
+        cleaned-data (lg/completed-set params)]
 
+    (commands/log-user-event! ctx user-id cleaned-data)))
 
 (def about-page
   (ui/page
@@ -56,13 +61,12 @@
 
 (def module
   {:static {"/about/" about-page}
-   :routes ["/app" {:middleware [mid/wrap-signed-in]}
-            ["" {:get app}]
-            ]
+   :routes [["/app" {:middleware [mid/wrap-signed-in]}
+             ["" {:get app}]]
+            ["/log-set" {:post log-set! :middleware [mid/wrap-signed-in]}]]
    :api-routes [["/api/echo" {:post echo}]]})
 
 (comment
 
-
-    ();;end of rich comment block
+  ();;end of rich comment block
   )

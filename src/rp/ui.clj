@@ -59,68 +59,90 @@
               "Page not found."
               "Something went wrong.")]))})
 
+
+
+(defn map-entry->hidden-input-attrs
+  "Convert a map entry [key value] to (html-) hidden input attributes."
+  [[k v]]
+  {:type "hidden"
+   :name (name k)
+   :id (name k)
+   :value (str v)})
+
+
 (defn input
   "Generic input element for forms."
   [attrs]
   [:input (merge {:type "number" :class "input input-bordered"} attrs)])
 
+
+
 (defn set-row
-  "Display a set in a row with input elements for logging."
+  "Display a set in a row with input elements for logging.
+
+  Apart from actual set data, takes a context map.
+  This must contain the position of the set in the plan.
+  This is required to log the set correctly."
   [{:keys [prescribed-weight prescribed-reps
-           performed-weight performed-reps]}]
-  [:div.set-row.flex.items-center.gap-2
-   (input {:name "weight"
-           :value performed-weight
-           :placeholder (or prescribed-weight "kg")
-           :inputmode "decimal"
-           :step "0.5"})
-   [:span "×"]
-   (input {:name "reps"
-           :value performed-reps
-           :placeholder (or prescribed-reps "reps")
-           :inputmode "numeric"})
-   [:input {:type "checkbox"
-            :name "completed"
-            :checked (some? performed-weight)}]])
-
-
-
-
+           performed-weight performed-reps]}
+   {:keys [mesocycle microcycle workout-day exercise-name] :as context-map}]
+  (biff/form {:class "inline"}
+             [:div.set-row.flex.items-center.gap-2
+              (input {:name "weight"
+                      :value performed-weight
+                      :placeholder (or prescribed-weight "kg")
+                      :inputmode "decimal"
+                      :step "0.5"})
+              [:span "×"]
+              (input {:name "reps"
+                      :value performed-reps
+                      :placeholder (or prescribed-reps "reps")
+                      :inputmode "numeric"})
+              (map (comp input map-entry->hidden-input-attrs) context-map)
+              [:input {:type "checkbox"
+                       :hx-post "/log-set"
+                       :hx-swap "outerHTML"
+                       :hx-include "closest .exercise"
+                       :name "completed"
+                       :checked (some? performed-weight)}]]))
 
 (defn exercise
   "Display an exercise with its sets."
-  [exercise-name sets] [:div.exercise.mb-6
-                                      [:h3.text-lg.font-semibold.mb2 exercise-name]
-                                      [:div.sets.space-y-2
-                                       (for [set-data sets] (set-row set-data))]])
+  [exercise-name sets context-map] [:div.exercise.mb-6
+                                    [:h3.text-lg.font-semibold.mb2 exercise-name]
+                                    (input {:name "exercise-name" :value exercise-name :type "hidden"})
+                                    [:div.sets.space-y-2
+                                     (for [set-data sets]
+                                       (set-row set-data
+                                                (assoc context-map :exercise-name exercise-name)))]])
 
 (defn workout
   "Display a workout as a section, with the exercises in it."
-  [workout-day exercises]
+  [workout-day exercises context-map]
   [:div.workout
    [:h2.text-2xl.font-bold.mb-4
     name " - " (clojure.core/name workout-day)]
    [:div.exercises
     (for [[ex-name sets] exercises]
-      (exercise ex-name sets))]])
+      (exercise ex-name sets (assoc context-map :workout-day (name workout-day))))]])
 
-
-(defn microcycle [microcycle-idx workouts]
+(defn microcycle [microcycle-idx workouts context-map]
   [:div.microcycle
    [:h2. "Week " (inc microcycle-idx)]
    [:div.workouts
     (for [[day exercises] workouts]
-      (workout day exercises))]])
+      (workout day exercises (assoc context-map :microcycle microcycle-idx)))]])
 
-
-(defn mesocycle [mesocycle-name microcycles]
+(defn mesocycle [mesocycle-name microcycles context-map]
   [:div.mesocycle
    [:h1 mesocycle-name]
    [:div.microcycles
     (for [[idx workouts] microcycles]
-      (microcycle idx workouts))]])
+      (microcycle idx workouts (assoc context-map :mesocycle mesocycle-name)))]])
 
 (defn render-plan [data]
+
   [:div.plan
+
    (for [[meso-name micros] data]
-     (mesocycle meso-name micros))])
+     (mesocycle meso-name micros {}))])
