@@ -1,3 +1,3 @@
 (ns rp.settings)
 
-(def app-name "My Application")
+(def app-name "Romance progression")
