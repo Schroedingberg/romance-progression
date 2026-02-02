@@ -35,6 +35,23 @@
                  "Barbell Squat (High Bar)" {:n-sets 2 :muscle-groups [:quads]}
                  "Bodyweight Squat" {:n-sets 1 :muscle-groups [:quads]}}}}})
 
+(def other-template
+  {:name "2x Minimal Full Body"
+   :n-microcycles 4
+   :workouts
+   {:monday
+    {"Dumbbell Row" {:n-sets 2 :muscle-groups [:back]}
+     "Dumbbell Press (Incline)" {:n-sets 2 :muscle-groups [:chest :shoulders]}
+     "Lying Dumbbell Curl" {:n-sets 3 :muscle-groups [:biceps]}
+     "Back Raise" {:n-sets 1 :muscle-groups [:hamstrings]}
+     "Reverse Lunge Dumbbell" {:n-sets 2 :muscle-groups [:glutes :quads]}
+     "Sissy squat" {:n-sets 2 :muscle-groups [:quads]}}
+    :thursday
+    {"Back Raise" {:n-sets 1 :muscle-groups [:hamstrings]}
+     "Barbell Squat" {:n-sets 2 :muscle-groups [:glutes :quads]}
+     "Bench press (Narrow Grip)" {:n-sets 2 :muscle-groups [:chest :triceps]}
+     "Pullup (Underhand Grip)" {:n-sets 2 :muscle-groups [:back :biceps]}}}})
+
 (defn- expand-exercises
   "Expand {:n-sets 3 ...} into a vector of 3 set maps."
   [{:keys [exercises]}]
