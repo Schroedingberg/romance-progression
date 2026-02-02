@@ -1,31 +1,18 @@
 (ns rp.storage
+  "localStorage persistence with auto-save on DB changes."
   (:require [rp.db :as db]))
 
-(def DB-KEY "rp-workout-db")
+(def ^:private DB-KEY "rp-workout-db")
 
-(defn save-db!
-  "Persist the database to localStorage."
-  []
-  (try
-    (.setItem js/localStorage DB-KEY (db/db->edn))
-    (catch :default e
-      (js/console.error "Failed to save DB:" e))))
+(defn- save-db! []
+  (.setItem js/localStorage DB-KEY (db/db->edn)))
 
 (defn load-db!
-  "Load the database from localStorage and call callback when done."
+  "Load persisted data and set up auto-save. Calls on-complete when ready."
   [on-complete]
-  (try
-    (when-let [data (.getItem js/localStorage DB-KEY)]
-      (db/load-from-edn! data))
-    (catch :default e
-      (js/console.error "Failed to load DB:" e)))
-
+  (when-let [data (.getItem js/localStorage DB-KEY)]
+    (db/load-from-edn! data))
   ;; Auto-save on every transaction
-  (add-watch db/db-listener :auto-save
-             (fn [_ _ _ _]
-               (save-db!)))
-
+  (add-watch db/db-version :auto-save (fn [_ _ _ _] (save-db!)))
   (on-complete))
 
-;; Future: IndexedDB for larger datasets
-;; localStorage has ~5MB limit, fine for workout logs

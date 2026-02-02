@@ -1,9 +1,7 @@
 // Service Worker for Romance Progression PWA
 const CACHE_NAME = 'rp-v1';
 const ASSETS = [
-  '/',
   '/js/main.js',
-  '/manifest.json',
   'https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css'
 ];
 

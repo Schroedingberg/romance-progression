@@ -16,12 +16,13 @@
                    "-XX:+CrashOnOutOfMemoryError"
                    "-Dbiff.env.BIFF_PROFILE=dev"]
         :main-opts ["-m" "com.biffweb.task-runner" "tasks/tasks"]}
-  :cljs {:extra-paths ["src/cljs"]
+  :cljs {:extra-paths ["src/cljs" "test/cljs"]
          :extra-deps {thheller/shadow-cljs {:mvn/version "2.28.20"}
                       reagent/reagent {:mvn/version "1.2.0"}
                       datascript/datascript {:mvn/version "1.7.3"}}}
   :clerk {:extra-deps {io.github.nextjournal/clerk {:mvn/version "0.17.1102"}}
-          :extra-paths ["docs"]}
+          :extra-paths ["docs"]
+          :main-opts ["-e" "(require '[nextjournal.clerk :as clerk]) (clerk/serve! {:browse? false :host \"0.0.0.0\" :port 7777 :watch-paths [\"docs\"]})"]}
   :test {:extra-paths ["test"]
          :extra-deps {io.github.cognitect-labs/test-runner {:git/tag "v0.5.1" :git/sha "dfb30dd"}}
          :main-opts ["-m" "cognitect.test-runner"]

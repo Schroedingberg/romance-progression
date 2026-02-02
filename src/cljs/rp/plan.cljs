@@ -1,48 +1,74 @@
 (ns rp.plan
-  "Training plan logic - ported from server-side Clojure.")
+  "Training plan templates and expansion.
+  
+  A template defines workouts with exercises and set counts.
+  The `->plan` function expands this into the full structure
+  used by the app: {plan-name {week# {day {exercise [sets...]}}}}
+  
+  Plans are persisted to localStorage."
+  (:require [cljs.reader :as reader]))
 
-;; Sample plan template - in production this would be loaded from user config
-(def template
+(def ^:private PLAN-KEY "rp-plan-template")
+
+;; Default template - exercises with metadata
+(def default-template
   {:name "Twice a week upper body focus"
    :n-microcycles 4
-   :workouts {:monday
-              {:exercises [["Dumbbell Press (Incline)" {:n-sets 2}]
-                           ["Cable Triceps Pushdown (Bar)" {:n-sets 3}]
-                           ["Seated Cable Row" {:n-sets 3}]
-                           ["Lying Biceps Dumbbell Curl" {:n-sets 2}]
-                           ["Barbell Upright Row" {:n-sets 3}]
-                           ["Barbell Squat (High Bar)" {:n-sets 2}]
-                           ["Bodyweight Squat" {:n-sets 1}]
-                           ["Back Raise" {:n-sets 1}]]}
-              :thursday
-              {:exercises [["Pulldown (Narrow Grip)" {:n-sets 2}]
-                           ["Cable Flexion Row" {:n-sets 2}]
-                           ["Barbell Curl (Narrow Grip)" {:n-sets 3}]
-                           ["Cable Overhead Triceps Extension" {:n-sets 3}]
-                           ["Pushup (Deficit)" {:n-sets 2}]
-                           ["Dumbbell Shoulder Press" {:n-sets 4}]
-                           ["Back Raise" {:n-sets 1}]
-                           ["Barbell Squat (High Bar)" {:n-sets 2}]
-                           ["Bodyweight Squat" {:n-sets 1}]]}}})
+   :workouts
+   {:monday
+    {:exercises {"Dumbbell Press (Incline)" {:n-sets 2 :muscle-groups [:chest]}
+                 "Cable Triceps Pushdown (Bar)" {:n-sets 3 :muscle-groups [:triceps]}
+                 "Seated Cable Row" {:n-sets 3 :muscle-groups [:back]}
+                 "Lying Biceps Dumbbell Curl" {:n-sets 2 :muscle-groups [:biceps]}
+                 "Barbell Upright Row" {:n-sets 3 :muscle-groups [:shoulders]}
+                 "Barbell Squat (High Bar)" {:n-sets 2 :muscle-groups [:quads]}
+                 "Bodyweight Squat" {:n-sets 1 :muscle-groups [:quads]}
+                 "Back Raise" {:n-sets 1 :muscle-groups [:hamstrings]}}}
+    :thursday
+    {:exercises {"Pulldown (Narrow Grip)" {:n-sets 2 :muscle-groups [:back]}
+                 "Cable Flexion Row" {:n-sets 2 :muscle-groups [:back]}
+                 "Barbell Curl (Narrow Grip)" {:n-sets 3 :muscle-groups [:biceps]}
+                 "Cable Overhead Triceps Extension" {:n-sets 3 :muscle-groups [:triceps]}
+                 "Pushup (Deficit)" {:n-sets 2 :muscle-groups [:chest]}
+                 "Dumbbell Shoulder Press" {:n-sets 4 :muscle-groups [:shoulders]}
+                 "Back Raise" {:n-sets 1 :muscle-groups [:hamstrings]}
+                 "Barbell Squat (High Bar)" {:n-sets 2 :muscle-groups [:quads]}
+                 "Bodyweight Squat" {:n-sets 1 :muscle-groups [:quads]}}}}})
 
-(defn expand-exercises
-  "Turn the n-sets specification from a template into n-sets maps."
-  [exercises]
-  (mapv (fn [[exercise-name {:keys [n-sets]}]]
-          [exercise-name (vec (repeat n-sets {}))])
-        exercises))
+(defn- expand-exercises
+  "Expand {:n-sets 3 ...} into a vector of 3 set maps."
+  [{:keys [exercises]}]
+  (reduce-kv
+   (fn [m name {:keys [n-sets] :as ex}]
+     (assoc m name (vec (repeat n-sets (-> ex (dissoc :n-sets) (assoc :exercise-name name))))))
+   (array-map)
+   exercises))
 
 (defn ->plan
-  "Expand template into a full plan structure."
+  "Expand a template into the full plan structure."
   [{:keys [name n-microcycles workouts]}]
-  (let [expanded-workouts
-        (into {}
-              (map (fn [[day {:keys [exercises]}]]
-                     [day (expand-exercises exercises)])
-                   workouts))
-        microcycles (mapv (fn [i] [i expanded-workouts])
-                          (range n-microcycles))]
-    {:name name
-     :microcycles microcycles}))
+  (let [expanded (update-vals workouts expand-exercises)]
+    {name (into (sorted-map)
+                (zipmap (range n-microcycles)
+                        (repeat n-microcycles expanded)))}))
 
-(def plan (->plan template))
+;; --- Storage ---
+
+(defonce ^:private template-atom (atom nil))
+
+(defn load-template []
+  (or (some-> (.getItem js/localStorage PLAN-KEY) reader/read-string)
+      default-template))
+
+(defn get-template []
+  (when (nil? @template-atom)
+    (reset! template-atom (load-template)))
+  @template-atom)
+
+(defn get-plan []
+  (->plan (get-template)))
+
+(defn get-plan-name []
+  (:name (get-template)))
+
+

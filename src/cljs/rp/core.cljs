@@ -1,23 +1,20 @@
 (ns rp.core
-  (:require [reagent.dom :as rdom]
-            [rp.db :as db]
+  "App entry point - initializes storage, UI, and service worker."
+  (:require [reagent.dom.client :as rdc]
             [rp.storage :as storage]
             [rp.ui :as ui]))
 
+(defonce ^:private root (atom nil))
+
+(defn- register-service-worker []
+  (when (.-serviceWorker js/navigator)
+    (-> js/navigator .-serviceWorker (.register "/sw.js"))))
+
 (defn init! []
-  ;; Load persisted data from IndexedDB
   (storage/load-db!
    (fn []
-     ;; Render the app
-     (rdom/render [ui/app]
-                  (.getElementById js/document "app"))
+     (when-not @root
+       (reset! root (rdc/create-root (.getElementById js/document "app"))))
+     (rdc/render @root [ui/app])
+     (register-service-worker))))
 
-     ;; Register service worker for PWA
-     (when (.-serviceWorker js/navigator)
-       (-> js/navigator
-           .-serviceWorker
-           (.register "/sw.js")
-           (.then #(js/console.log "SW registered"))
-           (.catch #(js/console.error "SW failed" %))))
-
-     (js/console.log "Romance Progression initialized"))))
