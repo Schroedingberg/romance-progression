@@ -12,6 +12,10 @@
         │               └── set-row (weight/reps input)
         ├── plans-page
         └── settings-page"
+    └── microcycle-section (week)
+        └── workout-section (day)
+            └── exercise-card
+                └── set-row (weight/reps input)"
   (:require [reagent.core :as r]
             [rp.db :as db]
             [rp.plan :as plan]
@@ -122,6 +126,8 @@
 
 (defn- workouts-page
   "Main workout tracking page."
+(defn app
+  "Main app component - renders the full workout plan with progress."
   []
   (let [events (db/get-all-events)
         plan (plan/get-plan)
@@ -129,6 +135,7 @@
         progress (state/view-progress-in-plan events plan)
         mesocycle-data (get progress plan-name)]
     [:<>
+    [:main.container
      [:header
       [:h1 plan-name]
       [:p "Track your workout progression"]]
@@ -208,4 +215,8 @@
 
     [:footer {:style {:margin-top "2rem" :text-align "center"}}
      [:small "Romance Progression • Local-first PWA"]]]])
+       [microcycle-section plan-name microcycle-idx workouts-map])
+
+     [:footer {:style {:margin-top "2rem" :text-align "center"}}
+      [:small "Romance Progression • Local-first PWA"]]]))
 
