@@ -19,10 +19,6 @@
 
 
 
-
-
-
-
 (defn base [{:keys [::recaptcha] :as ctx} & body]
   (apply
    biff/base-html
@@ -33,7 +29,10 @@
                      :description (str settings/app-name " Description")
                      :image "https://clojure.org/images/clojure-logo-120b.png"})
        (update :base/head (fn [head]
-                            (concat [[:link {:rel "stylesheet" :href (static-path "/css/main.css")}]
+                            (concat [;; Pico CSS - classless semantic CSS framework
+                                     [:link {:rel "stylesheet"
+                                             :href "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"}]
+
                                      [:script {:src (static-path "/js/main.js")}]
                                      [:script {:src "https://unpkg.com/htmx.org@2.0.7"}]
                                      [:script {:src "https://unpkg.com/htmx-ext-ws@2.0.2/ws.js"}]
@@ -47,14 +46,11 @@
 (defn page [ctx & body]
   (base
    ctx
-   [:.flex-grow]
-   [:.p-3.mx-auto.max-w-screen-sm.w-full
+   [:main.container
     (when (bound? #'csrf/*anti-forgery-token*)
       {:hx-headers (cheshire/generate-string
                     {:x-csrf-token csrf/*anti-forgery-token*})})
-    body]
-   [:.flex-grow]
-   [:.flex-grow]))
+    body]))
 
 (defn on-error [{:keys [status ex] :as ctx}]
   {:status status
@@ -62,7 +58,7 @@
    :body (rum/render-static-markup
           (page
            ctx
-           [:h1.text-lg.font-bold
+           [:h1
             (if (= status 404)
               "Page not found."
               "Something went wrong.")]))})
@@ -81,7 +77,7 @@
 (defn input
   "Generic input element for forms."
   [attrs]
-  [:input (merge {:type "number" :class "input input-bordered"} attrs)])
+  [:input (merge {:type "number"} attrs)])
 
 
 
@@ -101,70 +97,64 @@
   [{:keys [prescribed-weight prescribed-reps
            performed-weight performed-reps]}
    {:keys [mesocycle microcycle workout-day exercise-name] :as context-map}]
-  (biff/form {:class "inline"}
-             [:div.set-row.flex.items-center.gap-2
-
-              (input {:name "weight"
-                      :value performed-weight
-                      :placeholder (or prescribed-weight "kg")
-                      :inputmode "decimal"
+  (biff/form {:role "group" :class "set-row"}
+             (input {:name "weight"
+                     :value performed-weight
+                     :placeholder (or prescribed-weight "kg")
+                     :inputmode "decimal"
+                     :disabled (some? performed-weight)
+                     :step "0.5"
+                     :style {:width "5rem"}})
+             (input {:name "reps"
+                     :value performed-reps
+                     :placeholder (or prescribed-reps "reps")
+                     :inputmode "numeric"
+                     :disabled (some? performed-reps)
+                     :style {:width "4rem"}})
+             (map (comp input map-entry->hidden-input-attrs) context-map)
+             [:input {:type "checkbox"
+                      :hx-post "/log-set"
+                      :hx-swap "outerHTML"
+                      :hx-target "closest form.set-row"
+                      :name "completed"
                       :disabled (some? performed-weight)
-                      :step "0.5"})
-              [:span "×"]
-              (input {:name "reps"
-                      :value performed-reps
-                      :placeholder (or prescribed-reps "reps")
-                      :inputmode "numeric"
-                      :disabled (some? performed-reps)})
-              (map (comp input map-entry->hidden-input-attrs) context-map)
-              [:input {:type "checkbox"
-                       :hx-post "/log-set"
-                       :hx-swap "outerHTML"
-                       :hx-target "closest div.set-row"
-                       :name "completed"
-                       :disabled (some? performed-weight)
-                       :checked (some? performed-weight)}]]))
+                      :checked (some? performed-weight)}]))
 
 
 (defn exercise
   "Display an exercise with its sets."
-  [exercise-name sets context-map] [:div.exercise.mb-6
-                                    [:h3.text-lg.font-semibold.mb2 exercise-name]
-                                    (input {:name "exercise-name" :value exercise-name :type "hidden"})
-                                    [:div.sets.space-y-2
-                                     (for [set-data sets]
-                                       (set-row set-data
-                                                (assoc context-map :exercise-name exercise-name)))]])
+  [exercise-name sets context-map]
+  [:article
+   [:h4 exercise-name]
+   (input {:name "exercise-name" :value exercise-name :type "hidden"})
+   (map-indexed
+    (fn [idx set-data]
+      (set-row set-data
+               (assoc context-map
+                      :exercise-name exercise-name
+                      :set-index idx)))
+    sets)])
 
 (defn workout
   "Display a workout as a section, with the exercises in it."
   [workout-day exercises context-map]
-  [:div.workout
-   [:h3.text-2xl.font-bold.mb-4
-    (->> workout-day
-         name
-         str/capitalize)]
-   [:div.exercises
-    (for [[ex-name sets] exercises]
-      (exercise ex-name sets (assoc context-map :workout-day (name workout-day))))]])
+  [:section
+   [:h3 (->> workout-day name str/capitalize)]
+   (for [[ex-name sets] exercises]
+     (exercise ex-name sets (assoc context-map :workout-day (name workout-day))))])
 
 (defn microcycle [microcycle-idx workouts context-map]
-  [:div.microcycle
-   [:h2.text-2xl.font-bold.mb-4 "Week " (inc microcycle-idx)]
-   [:div.workouts
-    (for [[day exercises] workouts]
-      (workout day exercises (assoc context-map :microcycle microcycle-idx)))]])
+  [:section
+   [:h2 "Week " (inc microcycle-idx)]
+   (for [[day exercises] workouts]
+     (workout day exercises (assoc context-map :microcycle microcycle-idx)))])
 
 (defn mesocycle [mesocycle-name microcycles context-map]
-  [:div.mesocycle
+  [:section
    [:h1 mesocycle-name]
-   [:div.microcycles
-    (for [[idx workouts] microcycles]
-      (microcycle idx workouts (assoc context-map :mesocycle mesocycle-name)))]])
+   (for [[idx workouts] microcycles]
+     (microcycle idx workouts (assoc context-map :mesocycle mesocycle-name)))])
 
 (defn render-plan [data]
-
-  [:div.plan
-
-   (for [[meso-name micros] data]
-     (mesocycle meso-name micros {}))])
+  (for [[meso-name micros] data]
+    (mesocycle meso-name micros {})))

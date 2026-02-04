@@ -5,6 +5,7 @@
    :user [:map {:closed true}
           [:xt/id                     :user/id]
           [:user/email                :string]
+          [:user/password-hash        {:optional true} :string]  ; optional for migration from email auth
           [:user/joined-at            inst?]]
 
    :event/id :uuid
@@ -28,6 +29,7 @@
                               :sunday]]
 
            [:event/exercise  {:optional true} :string]
+           [:event/set-index :int]
            [:event/prescribed-weight {:optional true} [:maybe :double]]
            [:event/prescribed-reps {:optional true} [:maybe :int]]
            [:event/performed-weight  :double]

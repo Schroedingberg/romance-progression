@@ -9,19 +9,18 @@
             [rp.domain.plan :as plan]
             [rp.domain.state :as st]
             [rp.domain.logging :as lg]
-            [rp.domain.progression :as prog]
             [xtdb.api :as xt]
             [cheshire.core :as cheshire]
             [clojure.core :as c]
             [clojure.data :as data]))
 
 (defn progress-map
-  "Render the progress represented by events in the context of the plan generated from template as html."
+  "Render the progress represented by events in the context of the plan generated from template as html.
+  
+  Future: inject a prescription function here to show predicted weights/reps for next workout."
   [events template]
   (-> events
       (st/view-progress-in-plan (plan/->plan template))
-      ;;(prog/insert-predictions prog/simple)
-      ;; TODO Inject a prescription function here somewhere - like prog/simple
       (ui/render-plan)))
 
 
@@ -30,37 +29,28 @@
 
 
 (defn app
-  "This returns the page where the main functionality happens -
-  logging sets and displaying progress."
+  "Main page for logging sets and displaying progress."
   [{:keys [session biff/db] :as ctx}]
   (let [{:user/keys [email]} (xt/entity db (:uid session))
-        db-events (queries/get-all-events ctx)
+        db-events (queries/get-user-events ctx)
         events (map queries/db-event->domain-event db-events)]
     (ui/page
      {}
-     [:div "Signed in as " email ". "
-
-      (biff/form
-       {:action "/auth/signout"
-        :class "inline"}
-       [:button.text-blue-500.hover:text-blue-800 {:type "submit"}
-        "Sign out"])
-      "."]
-
-     [:div "DEBUG"
-      [:p "Count events:" (count events)]]
-     (progress-map events plan/template)
-     [:.flex-grow]
-
-     [:.h-6])))
+     [:header
+      [:nav
+       [:ul
+        [:li [:strong "Signed in as " email]]]
+       [:ul
+        [:li (biff/form
+              {:action "/auth/signout"}
+              [:button.secondary.outline {:type "submit"} "Sign out"])]]]]
+     (progress-map events plan/template))))
 
 
 (defn log-set! [{:keys [session biff/db params] :as ctx}]
-  (let [{:user/keys [email]} (xt/entity db (:uid session))
-        user-id (biff/lookup-id db :user/email email)
+  (let [user-id (:uid session)
         cleaned-data (lg/completed-set params)]
-
-    (ui/log-set-feedback-row (commands/log-user-event! ctx user-id cleaned-data) )))
+    (ui/log-set-feedback-row (commands/log-user-event! ctx user-id cleaned-data))))
 
 
 
@@ -68,7 +58,7 @@
   (ui/page
    {:base/title (str "About " settings/app-name)}
    [:p "This app was made with "
-    [:a.link {:href "https://biffweb.com"} "Biff"] "."]))
+    [:a {:href "https://biffweb.com"} "Biff"] "."]))
 
 (defn echo [{:keys [params]}]
   {:status 200

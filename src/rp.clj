@@ -1,8 +1,7 @@
 (ns rp
   (:require [com.biffweb :as biff]
-            [rp.email :as email]
+            [rp.auth :as auth]
             [rp.app :as app]
-            [rp.home :as home]
             [rp.middleware :as mid]
             [rp.ui :as ui]
             [rp.worker :as worker]
@@ -17,8 +16,7 @@
 
 (def modules
   [app/module
-   (biff/authentication-module {})
-   home/module
+   auth/module
    schema/module
    worker/module])
 
@@ -50,7 +48,6 @@
 
 (def initial-system
   {:biff/modules #'modules
-   :biff/send-email #'email/send-email
    :biff/handler #'handler
    :biff/malli-opts #'malli-opts
    :biff.beholder/on-save #'on-save

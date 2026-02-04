@@ -7,7 +7,8 @@
 
 
 (defn expand-exercises
-  "Turn the n-sets specification from a template into n-sets maps, representing sets."
+  "Turn the n-sets specification from a template into n-sets maps, representing sets.
+  Uses array-map to preserve the order of exercises as defined in the template."
   [{:keys [exercises]}]
   (reduce-kv
    (fn [m exercise-name {:keys [n-sets] :as ex}]
@@ -15,7 +16,7 @@
             (vec (repeat n-sets (-> ex
                                     (dissoc :n-sets)
                                     (assoc :exercise-name exercise-name))))))
-   {}
+   (array-map)
    exercises))
 
 

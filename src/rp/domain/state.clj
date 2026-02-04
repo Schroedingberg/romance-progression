@@ -24,6 +24,22 @@
    :timestamp (java.time.Instant/now)})
 
 
+(defn events->indexed-sets
+  "Convert a list of events for one exercise into a sparse vector by set-index.
+  Events with set-index are placed at that position; events without are appended."
+  [events]
+  (let [indexed (filter :set-index events)
+        max-idx (if (seq indexed)
+                  (apply max (map :set-index indexed))
+                  -1)
+        base-vec (vec (repeat (inc max-idx) {}))
+        with-indexed (reduce (fn [v e]
+                               (assoc v (:set-index e) e))
+                             base-vec
+                             indexed)
+        unindexed (remove :set-index events)]
+    (into with-indexed unindexed)))
+
 (defn events->plan-map
   "Transforms a flat event log into a nested map that is congruent with the structure of a plan.
 
@@ -33,7 +49,9 @@
   [events]
   (as-> events e
     (group-by (juxt :mesocycle :microcycle :workout) e)
-    (update-vals  e (partial group-by :exercise))
+    (update-vals e (partial group-by :exercise))
+    (update-vals e (fn [exercises-map]
+                     (update-vals exercises-map events->indexed-sets)))
     (reduce-kv (fn [m k v]
                  (assoc-in m k v)) {} e)))
 
@@ -48,16 +66,17 @@
         pad-performed (concat from-events (repeat {}))]
     (vec (take max-count (map merge pad-planned pad-performed)))))
 
+;; ============================================================================
 ;; Public API
-;; TODO: Move internal functions of state reconstruction to private namespace and expose public api via public namespace
+;; ============================================================================
 
-;; TODO: Write at least some "integration-ish" tests
 (defn view-progress-in-plan
   "Creates a progress view (a map) from a given event log and a plan.
 
-  This just deep-merges plan and event log.
-  From that you can see what was planned, what of it has been done and what
-  exactly has been performed."
+  This deep-merges plan and event log so you can see:
+  - What was planned
+  - What has been done
+  - What exactly was performed"
   [event-log plan]
   (let [from-events (->> event-log
                          events->plan-map)]

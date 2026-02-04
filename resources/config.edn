@@ -22,12 +22,7 @@
  :biff/jwt-secret               #biff/secret JWT_SECRET
  :biff.refresh/enabled          #profile {:dev true :default false}
 
- :mailersend/api-key  #biff/secret MAILERSEND_API_KEY
- :mailersend/from     #biff/env MAILERSEND_FROM
- :mailersend/reply-to #biff/env MAILERSEND_REPLY_TO
-
- :recaptcha/secret-key #biff/secret RECAPTCHA_SECRET_KEY
- :recaptcha/site-key   #biff/env RECAPTCHA_SITE_KEY
+ ;; Removed mailersend and recaptcha - using simple password auth
 
  :biff.nrepl/port #or [#biff/env NREPL_PORT "7888"]
  :biff.nrepl/args ["--port" #ref [:biff.nrepl/port]
@@ -40,16 +35,11 @@
  :biff.tasks/main-ns                rp
  :biff.tasks/on-soft-deploy         "\"(rp/on-save @rp/system)\""
  :biff.tasks/generate-assets-fn     rp/generate-assets!
- :biff.tasks/css-output             "target/resources/public/css/main.css"
- :biff.tasks/deploy-untracked-files [#ref [:biff.tasks/css-output]
-                                     "config.env"]
+ ;; Using Pico CSS from CDN - no build step needed
+ :biff.tasks/deploy-untracked-files ["config.env"]
 
  ;; `clj -M:dev prod-dev` will run the soft-deploy task whenever files in these directories are changed.
  :biff.tasks/watch-dirs             ["src" "dev" "resources" "test"]
-
- ;; The version of the Taliwind standalone bin to install. See `clj -M:dev css -h`. If you change
- ;; this, run `rm bin/tailwindcss; clj -M:dev install-tailwind`.
- :biff.tasks/tailwind-version       "v3.4.17"
 
  ;; :rsync is the default if rsync is on the path; otherwise :git is the default. Set this to :git
  ;; if you have rsync on the path but still want to deploy with git.

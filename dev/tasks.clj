@@ -25,17 +25,17 @@
    (let [timer (Timer.)
          task (atom nil)]
      (with-meta
-      (fn [& args]
-        (when-let [t ^TimerTask @task]
-          (.cancel t))
-        (let [new-task (proxy [TimerTask] []
-                         (run []
-                           (apply f args)
-                           (reset! task nil)
-                           (.purge timer)))]
-          (reset! task new-task)
-          (.schedule timer new-task timeout)))
-      {:task-atom task}))))
+       (fn [& args]
+         (when-let [t ^TimerTask @task]
+           (.cancel t))
+         (let [new-task (proxy [TimerTask] []
+                          (run []
+                            (apply f args)
+                            (reset! task nil)
+                            (.purge timer)))]
+           (reset! task new-task)
+           (.schedule timer new-task timeout)))
+       {:task-atom task}))))
 
 (defmacro future [& body]
   `(clojure.core/future
@@ -168,7 +168,7 @@
                           [(str "app@" server) "mkdir" "-p"] dirs)))
     (doseq [file files]
       (apply shell "scp" (concat
-                           (when ssh-port ["-P" (str ssh-port)])
+                          (when ssh-port ["-P" (str ssh-port)])
                           [file (str "app@" server ":" file)]))))
   ;; deploy-cmd, deploy-from, and deploy-to are all deprecated (but still supported for backwards compatibility)
   (if-some [git-deploy-cmd (or git-deploy-cmd deploy-cmd)]
@@ -324,10 +324,7 @@
         (run-task "generate-config"))
       (when (fs/exists? "package.json")
         (shell (install-js-deps-cmd)))
-      (let [{:keys [local-bin-installed tailwind-cmd]} (tailwind-installation-info)]
-        (when (and (= tailwind-cmd :local-bin) (not local-bin-installed))
-          (run-task "install-tailwind")))
-      (future (run-task "css" "--watch"))
+      ;; Removed Tailwind CSS - using Pico CSS from CDN instead
       (spit ".nrepl-port" port)
       ((requiring-resolve (symbol (str main-ns) "-main"))))))
 
@@ -347,8 +344,7 @@
     (when-not no-clean
       (println "Cleaning...")
       (run-task "clean"))
-    (println "Generating CSS...")
-    (run-task "css" "--minify")
+    ;; No CSS build needed - using Pico CSS from CDN
     (println "Calling" generate-assets-fn "...")
     ((requiring-resolve generate-assets-fn) ctx)
     (println "Compiling...")
