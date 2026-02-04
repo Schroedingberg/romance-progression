@@ -3,6 +3,15 @@
   
   Component hierarchy:
     app
+    ├── nav-menu (navigation)
+    └── current page:
+        ├── workouts-page
+        │   └── microcycle-section (week)
+        │       └── workout-section (day)
+        │           └── exercise-card
+        │               └── set-row (weight/reps input)
+        ├── plans-page
+        └── settings-page"
     └── microcycle-section (week)
         └── workout-section (day)
             └── exercise-card
@@ -12,6 +21,12 @@
             [rp.plan :as plan]
             [rp.state :as state]
             [clojure.string :as str]))
+
+;; -----------------------------------------------------------------------------
+;; Navigation state
+;; -----------------------------------------------------------------------------
+
+(defonce current-page (r/atom :workouts))
 
 (defn- set-row
   "A single set with weight/reps inputs."
@@ -83,6 +98,34 @@
      ^{:key workout-key}
      [workout-section mesocycle-name microcycle-idx workout-key exercises-map])])
 
+;; -----------------------------------------------------------------------------
+;; Navigation menu
+;; -----------------------------------------------------------------------------
+
+(defn- nav-menu
+  "Top navigation bar with page links."
+  []
+  (let [nav-item (fn [page label]
+                   [:li [:a {:href "#"
+                             :class (when (= @current-page page) "contrast")
+                             :on-click (fn [e]
+                                         (.preventDefault e)
+                                         (reset! current-page page))}
+                         label]])]
+    [:nav.container
+     [:ul
+      [:li [:strong "RP"]]]
+     [:ul
+      [nav-item :workouts "Workouts"]
+      [nav-item :plans "Plans"]
+      [nav-item :settings "Settings"]]]))
+
+;; -----------------------------------------------------------------------------
+;; Pages
+;; -----------------------------------------------------------------------------
+
+(defn- workouts-page
+  "Main workout tracking page."
 (defn app
   "Main app component - renders the full workout plan with progress."
   []
@@ -91,6 +134,7 @@
         plan-name (plan/get-plan-name)
         progress (state/view-progress-in-plan events plan)
         mesocycle-data (get progress plan-name)]
+    [:<>
     [:main.container
      [:header
       [:h1 plan-name]
@@ -98,6 +142,79 @@
 
      (for [[microcycle-idx workouts-map] (sort-by first mesocycle-data)]
        ^{:key microcycle-idx}
+       [microcycle-section plan-name microcycle-idx workouts-map])]))
+
+(defn- plans-page
+  "Plan management page - view, import, create plans."
+  []
+  (let [current-template (plan/get-template)
+        current-name (:name current-template)]
+    [:<>
+     [:header
+      [:h1 "Plans"]
+      [:p "Manage your workout plans"]]
+
+     [:section
+      [:h2 "Current Plan"]
+      [:p [:strong current-name]]]
+
+     [:section
+      [:h2 "Available Plans"]
+      (for [template plan/available-templates
+            :let [template-name (:name template)
+                  is-current? (= template-name current-name)]]
+        ^{:key template-name}
+        [:article {:style {:margin-bottom "1rem"}}
+         [:header [:strong template-name]]
+         [:p (str (:n-microcycles template) " weeks • "
+                  (count (:workouts template)) " days/week")]
+         (if is-current?
+           [:button.secondary {:disabled true} "Current"]
+           [:button {:on-click #(do (plan/set-template! template)
+                                    (reset! current-page :workouts))}
+            "Use This Plan"])])]
+
+     [:section
+      [:h2 "Import Plan"]
+      [:p "Import a plan from EDN file"]
+      [:input {:type "file" :accept ".edn"}]]]))
+
+(defn- settings-page
+  "App settings page."
+  []
+  [:<>
+   [:header
+    [:h1 "Settings"]
+    [:p "Configure the app"]]
+
+   [:section
+    [:h2 "Data"]
+    [:button.secondary {:on-click #(js/console.log "Export data")}
+     "Export All Data"]
+    [:button.secondary.outline {:style {:margin-left "0.5rem"}
+                                :on-click #(when (js/confirm "Clear all workout logs?")
+                                             (js/console.log "Clear data"))}
+     "Clear Logs"]]
+
+   [:section
+    [:h2 "About"]
+    [:p "Romance Progression"]
+    [:small "Local-first PWA for workout tracking"]]])
+
+(defn app
+  "Main app component - renders navigation and current page."
+  []
+  [:div
+   [nav-menu]
+   [:main.container
+    (case @current-page
+      :workouts [workouts-page]
+      :plans    [plans-page]
+      :settings [settings-page]
+      [workouts-page])
+
+    [:footer {:style {:margin-top "2rem" :text-align "center"}}
+     [:small "Romance Progression • Local-first PWA"]]]])
        [microcycle-section plan-name microcycle-idx workouts-map])
 
      [:footer {:style {:margin-top "2rem" :text-align "center"}}

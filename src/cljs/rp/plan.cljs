@@ -40,17 +40,17 @@
    :n-microcycles 4
    :workouts
    {:monday
-    {"Dumbbell Row" {:n-sets 2 :muscle-groups [:back]}
-     "Dumbbell Press (Incline)" {:n-sets 2 :muscle-groups [:chest :shoulders]}
-     "Lying Dumbbell Curl" {:n-sets 3 :muscle-groups [:biceps]}
-     "Back Raise" {:n-sets 1 :muscle-groups [:hamstrings]}
-     "Reverse Lunge Dumbbell" {:n-sets 2 :muscle-groups [:glutes :quads]}
-     "Sissy squat" {:n-sets 2 :muscle-groups [:quads]}}
+    {:exercises {"Dumbbell Row" {:n-sets 2 :muscle-groups [:back]}
+                 "Dumbbell Press (Incline)" {:n-sets 2 :muscle-groups [:chest :shoulders]}
+                 "Lying Dumbbell Curl" {:n-sets 3 :muscle-groups [:biceps]}
+                 "Back Raise" {:n-sets 1 :muscle-groups [:hamstrings]}
+                 "Reverse Lunge Dumbbell" {:n-sets 2 :muscle-groups [:glutes :quads]}
+                 "Sissy squat" {:n-sets 2 :muscle-groups [:quads]}}}
     :thursday
-    {"Back Raise" {:n-sets 1 :muscle-groups [:hamstrings]}
-     "Barbell Squat" {:n-sets 2 :muscle-groups [:glutes :quads]}
-     "Bench press (Narrow Grip)" {:n-sets 2 :muscle-groups [:chest :triceps]}
-     "Pullup (Underhand Grip)" {:n-sets 2 :muscle-groups [:back :biceps]}}}})
+    {:exercises {"Back Raise" {:n-sets 1 :muscle-groups [:hamstrings]}
+                 "Barbell Squat" {:n-sets 2 :muscle-groups [:glutes :quads]}
+                 "Bench press (Narrow Grip)" {:n-sets 2 :muscle-groups [:chest :triceps]}
+                 "Pullup (Underhand Grip)" {:n-sets 2 :muscle-groups [:back :biceps]}}}}})
 
 (defn- expand-exercises
   "Expand {:n-sets 3 ...} into a vector of 3 set maps."
@@ -87,5 +87,15 @@
 
 (defn get-plan-name []
   (:name (get-template)))
+
+(def available-templates
+  "All built-in plan templates."
+  [default-template other-template])
+
+(defn set-template!
+  "Switch to a different plan template and persist to localStorage."
+  [template]
+  (.setItem js/localStorage PLAN-KEY (pr-str template))
+  (reset! template-atom template))
 
 
