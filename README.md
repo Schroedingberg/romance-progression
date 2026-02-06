@@ -1,3 +1,6 @@
+> Development is halted for now. I've found that maintaining a server is too much overhead for the problem I am trying to solve here, so I've built https://github.com/Schroedingberg/progressive - if you need a simple, local first, clojure-based workout tracker, you should try that one out!
+
+
 # Romance progression - your romantic workout tracker
 
 This is a simple, hypertrophy oriented, workout tracker.
